@@ -1,0 +1,16 @@
+node_modules/
+*.js
+!jest.config.js
+*.d.ts
+dist/
+dist-lambda/
+.cdk.staging
+cdk.out/
+data/
+.floci-sm-arn
+*.zip
+.DS_Store
+*.md
+!README.md
+!HELP.md
+!DEPLOY.md

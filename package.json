@@ -1,0 +1,39 @@
+{
+  "name": "demo-lex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo bot Amazon Lex V2 con CDK TypeScript: bot, intents, slots y QnAIntent sobre Bedrock Knowledge Base",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "watch": "tsc -w --noEmit",
+    "test": "jest",
+    "smoke": "node scripts/smoke.mjs",
+    "cdk": "cd cdk && cdk",
+    "synth": "cd cdk && cdk synth LexStack",
+    "deploy:lex:dev": "cd cdk && cdk deploy LexStack --require-approval never",
+    "destroy:lex:dev": "cd cdk && cdk destroy LexStack --force"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cloudformation": "^3.879.0",
+    "@aws-sdk/client-lex-runtime-v2": "^3.879.0",
+    "@swc/core": "^1.15.0",
+    "@swc/jest": "^0.2.39",
+    "@types/aws-lambda": "^8.10.145",
+    "@types/jest": "^30",
+    "@types/node": "^24.10.1",
+    "aws-cdk": "2.1144.0",
+    "esbuild": "^0.28.2",
+    "jest": "^30",
+    "tsx": "^4.23.0",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.879.0",
+    "@aws-sdk/client-lex-models-v2": "^3.879.0",
+    "aws-cdk-lib": "^2.271.0",
+    "constructs": "^10.5.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
