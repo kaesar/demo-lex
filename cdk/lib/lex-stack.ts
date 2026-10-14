@@ -135,6 +135,9 @@ export class LexStack extends cdk.Stack {
         {
           name: 'Especialidad',
           description: 'Especialidades médicas de la clínica',
+          // Lex exige ValueSelectionSetting aunque CFN lo marque opcional.
+          // TOP_RESOLUTION: permite sinónimos y devuelve el valor canónico.
+          valueSelectionSetting: { resolutionStrategy: 'TOP_RESOLUTION' },
           slotTypeValues: [
             {
               sampleValue: { value: 'Medicina general' },
@@ -246,6 +249,7 @@ export class LexStack extends cdk.Stack {
             { utterance: 'consultar cita' },
             { utterance: 'estado de mi cita' },
           ],
+          slotPriorities: [{ priority: 1, slotName: 'Correo' }],
           slots: [
             {
               name: 'Correo',
@@ -287,8 +291,9 @@ export class LexStack extends cdk.Stack {
           name: 'QnAIntent',
           displayName: 'QnAIntent',
           parentIntentSignature: 'AMAZON.QnAIntent',
+          // Utterances en ASCII plano: Lex rechaza signos como ¿ ? en el build.
           sampleUtterances: [
-            { utterance: '¿que informacion tienes disponible?' },
+            { utterance: 'que informacion tienes disponible' },
             { utterance: 'buscar documentos' },
             { utterance: 'ayudame con el proceso' },
           ],
@@ -300,15 +305,19 @@ export class LexStack extends cdk.Stack {
             dataSourceConfiguration: {
               bedrockKnowledgeStoreConfiguration: {
                 bedrockKnowledgeBaseArn: kbArn,
+                // Requerido por Lex aunque CFN lo marque opcional: sin él el
+                // import falla con NPE en exactResponse().
+                exactResponse: false,
               },
             },
           },
         },
         {
           // Obligatorio: CFN exige AMAZON.FallbackIntent para crear el bot.
+          // Los built-in solo admiten dialog hook / fulfillment / closing:
+          // no llevan sampleUtterances ni description.
           name: 'FallbackIntent',
           parentIntentSignature: 'AMAZON.FallbackIntent',
-          sampleUtterances: [],
           intentClosingSetting: {
             closingResponse: {
               messageGroupsList: [
@@ -336,7 +345,10 @@ export class LexStack extends cdk.Stack {
       dataPrivacy: { ChildDirected: false },
       idleSessionTtlInSeconds: idleTtl,
       roleArn: lexRole.roleArn,
-      autoBuildBotLocales: true,
+      // El build lo hace el custom resource WaitForBuilt (único compilador):
+      // con true, CFN lanza su propio build en paralelo y el handler choca
+      // con "Build operation can not be performed ... ReadyExpressTesting".
+      autoBuildBotLocales: false,
       botLocales: [localeSpec],
     });
 

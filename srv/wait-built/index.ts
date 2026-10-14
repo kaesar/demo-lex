@@ -70,10 +70,23 @@ export async function handler(event: {
     throw new Error(`Locale ${LocaleId} no encontrado en bot ${BotName}`);
   }
 
-  // Build sobre DRAFT (idempotente: Redisigning no hace nada si ya Built).
-  await client.send(
-    new BuildBotLocaleCommand({ botId: bot.botId, botVersion: 'DRAFT', localeId: LocaleId }),
-  );
+  // El CfnBot lleva autoBuildBotLocales=false: este handler es el único que
+  // compila. Si Lex ya tiene un build en curso (Building/ReadyExpressTesting),
+  // BuildBotLocale lanza ConflictException: en ese caso se pasa a polling en
+  // vez de fallar (carrera entre la creación del bot y el custom resource).
+  try {
+    await client.send(
+      new BuildBotLocaleCommand({ botId: bot.botId, botVersion: 'DRAFT', localeId: LocaleId }),
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const name = err instanceof Error ? err.name : '';
+    if (name.includes('Conflict') || msg.includes('can not be performed')) {
+      console.log(`Build ya en curso (${msg}); esperando a Built por polling.`);
+    } else {
+      throw err;
+    }
+  }
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const res = await client.send(
@@ -91,7 +104,8 @@ export async function handler(event: {
     // 'Processing'/'Importing'/'ReadyExpressTesting' son transitorios y deben
     // seguir en polling. 'Deleting' no debería ocurrir durante un Build.
     if (status === 'Failed' || status === 'Deleting') {
-      throw new Error(`Build del locale ${LocaleId} terminó en "${status}"`);
+      const reasons = (res.failureReasons ?? []).join(' | ') || '(sin failureReasons)';
+      throw new Error(`Build del locale ${LocaleId} terminó en "${status}": ${reasons}`);
     }
     await sleep(POLL_MS);
   }
